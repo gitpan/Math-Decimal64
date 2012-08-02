@@ -1,0 +1,16 @@
+MANIFEST
+CHANGES
+README
+Decimal64.pm
+Decimal64.xs
+Makefile.PL
+t/boundaries.t
+t/conv.t
+t/dec_inc.t
+t/general.t
+t/new.t
+t/overload_int.t
+t/overload_spaceship.t
+t/pod.t
+t/reassign.t
+t/strtod64.t

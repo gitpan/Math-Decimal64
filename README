@@ -1,0 +1,16 @@
+
+Build in the usual way:
+
+perl Makefile.PL
+make test
+make install
+
+For that to work, you'll need a compiler that provides support for the _Decimal64 type.
+
+My (mingw64.sf) ports of gcc-4.6.3 and gcc-4.7.0 provided such support, but my (mingw.org)
+port of gcc-4.5.2 did not. (That's about all I know.)
+
+Consider this module to be alpha software.
+
+Cheers,
+Rob
