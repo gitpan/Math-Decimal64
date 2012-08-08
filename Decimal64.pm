@@ -10,7 +10,7 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 $VERSION = eval $VERSION;
 
 DynaLoader::bootstrap Math::Decimal64 $Math::Decimal64::VERSION;
@@ -19,13 +19,13 @@ DynaLoader::bootstrap Math::Decimal64 $Math::Decimal64::VERSION;
 @Math::Decimal64::EXPORT_OK = qw(
     MEtoD64 UVtoD64 IVtoD64 NVtoD64 PVtoD64 STRtoD64 D64toME D64toNV 
     InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64   
-    assignME exp10 have_strtod64
+    assignME Exp10 have_strtod64
     );
 
 %Math::Decimal64::EXPORT_TAGS = (all => [qw(
     MEtoD64 UVtoD64 IVtoD64 NVtoD64 PVtoD64 STRtoD64 D64toME D64toNV 
     InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64   
-    assignME exp10 have_strtod64
+    assignME Exp10 have_strtod64
     )]);
 
 use overload
@@ -137,9 +137,7 @@ sub new {
 }
 
 sub D64toME {
-    my $neg_zero = 0;
-    $neg_zero = 1 if is_ZeroD64($_[0]) == -1;
-    return ('-0', '0') if $neg_zero;
+    return ('-0', '0') if (is_ZeroD64($_[0]) == -1); # Negative Zero.
     my @ret = _D64toME($_[0]);
     if(!defined($ret[1])) {
       @ret = _sci2me($ret[0]);
@@ -151,7 +149,8 @@ sub _sci2me {
     my @ret = split /e/i, $_[0];
     chop $ret[0] while $ret[0] =~ /0\b/;
     my @adj = split /\./, $ret[0];
-    my $adj = length($adj[1]) || 0;
+    my $adj = defined $adj[1] ? length($adj[1])
+                              : 0;
     $ret[0] =~ s/\.//;
     $ret[1] -= $adj;
     return @ret; 
@@ -335,7 +334,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
 
 =head1 OTHER FUNCTIONS
 
-     $d64 = exp10($pow);
+     $d64 = Exp10($pow);
       Returns a Math::Decimal64 object with a value of
       10 ** $pow, for $pow in the range (-398 .. 383). Croaks
       with appropriate message if $pow is not within that range.

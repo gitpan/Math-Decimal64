@@ -121,8 +121,8 @@ else {
  print "not ok 16\n";
 }
 
-my $shift = exp10(-15);
-my $cancel = exp10(15);
+my $shift = Exp10(-15);
+my $cancel = Exp10(15);
 
 if($shift * $cancel == UnityD64(1)){print "ok 17\n"}
 else {

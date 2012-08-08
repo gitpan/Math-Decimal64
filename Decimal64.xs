@@ -167,12 +167,12 @@ SV * UnityD64(int sign) {
      return obj_ref;
 }
 
-SV * exp10(int power) {
+SV * Exp10(int power) {
      _Decimal64 * d64;
      SV * obj_ref, * obj;
 
      if(power < -398 || power > 384)
-       croak("Argument supplied to exp10 function (%d) is out of allowable range", power);
+       croak("Argument supplied to Exp10 function (%d) is out of allowable range", power);
 
      Newx(d64, 1, _Decimal64);
      if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
@@ -814,7 +814,7 @@ UnityD64 (sign)
 	int	sign
 
 SV *
-exp10 (power)
+Exp10 (power)
 	int	power
 
 SV *

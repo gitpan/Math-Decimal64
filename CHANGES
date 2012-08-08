@@ -1,2 +1,9 @@
+0.02
+ - Small change to _sci2me() to avoid 'uninitialized' warnings on 5.10 (and
+   perhaps earlier).
+
+   Replace 'exp10' (which already exists in at least some C libraries)
+   with Exp10.
+
 0.01
  - First release.  
