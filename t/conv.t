@@ -47,11 +47,12 @@ else {
 
 $ok = 1;
 
-for my $prec(0 .. 382) { # Exponents >382 are out of bounds for 3-digit (integer) significands.
+for my $prec(0 .. 382) { # Exponents >382 with 3-digit (integer) significands
+                         # are out of bounds for MEtoD64().
   for my $eg(1 .. 10) {
     my $man = int(rand(500));
     if($eg % 2) {$man = '-' . $man} 
-    my $d64_1 = Math::Decimal64->new($man, $prec);
+    my $d64_1 = Math::Decimal64->new($man, $prec); # calls MEtoD64()
     my ($m, $p) = D64toME($d64_1);
     my $d64_2 = Math::Decimal64->new($m, $p);
     if($d64_1 != $d64_2) {
@@ -93,7 +94,7 @@ for my $size(1 .. 16) {
   for my $prec(0 .. 369) {
     for my $eg(1 .. 10) {
       my $man = rand_x($size);
-      $man *= -1 if ($eg % 2);
+      $man = '-' . $man if ($eg % 2);
       my $d64_1 = Math::Decimal64->new($man, $prec);
       my ($m, $p) = D64toME($d64_1);
       my $d64_2 = Math::Decimal64->new($m, $p);
@@ -116,7 +117,7 @@ for my $size(1 .. 16) {
   for my $prec(0 .. 398) {
     for my $eg(1 .. 10) {
       my $man = rand_x($size);
-      $man *= -1 if ($eg % 2);
+      $man = '-' . $man if ($eg % 2);
       my $d64_1 = Math::Decimal64->new($man, -$prec);
       my ($m, $p) = D64toME($d64_1);
       my $d64_2 = Math::Decimal64->new($m, $p);
@@ -142,6 +143,7 @@ else {
   warn "\$man: $man \$exp: $exp\n";
   print "not ok 9\n";
 }
+
 
 sub rand_x {
     if($_[0] > 16 || $_[0] < 0) {die "rand_x() given bad value"}

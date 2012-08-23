@@ -19,7 +19,7 @@ for my $size(1 .. 16) {
   for my $prec(0 .. 369) {
     for my $eg(1 .. 4) {
       my $man = rand_x($size);
-      $man *= -1 if ($eg % 2);
+      $man = '-' . $man if ($eg % 2);
       my $d64 = Math::Decimal64->new($man, $prec);
       if($d64 != int($d64)) {
         warn "\$d64: $d64\nint(\$d64): ", int($d64), "\n";
@@ -90,3 +90,5 @@ sub rand_x {
     for(1 ..$_[0]) {$ret .= int(rand(10))}
     return $ret;
 }
+
+

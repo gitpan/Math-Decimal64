@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use Math::Decimal64 qw(:all);
 
-print "1..18\n";
+print "1..25\n";
 
 my($man, $exp);
 
@@ -137,4 +137,56 @@ if($pv_check2 == $neg_test) {print "ok 18\n"}
 else {
  warn "\$pv_check2: $pv_check2\n";
  print "not ok 18\n";
+}
+
+if(DEC64_MAX == Math::Decimal64->new('9999999999999999', 369)) {print "ok 19\n"}
+else {
+  warn "\nDEC64_MAX: ", DEC64_MAX, "\n";
+  print "not ok 19\n";
+}
+
+if(UnityD64(-1) * DEC64_MAX == Math::Decimal64->new('-9999999999999999', 369))
+  {print "ok 20\n"}
+else {
+  warn "\nDEC64_MAX * -1: ", UnityD64(-1) * DEC64_MAX, "\n";
+  print "not ok 20\n";
+}
+
+if(DEC64_MIN == Math::Decimal64->new('1', -398)) {print "ok 21\n"}
+else {
+  warn "\nDEC64_MIN: ", DEC64_MIN, "\n";
+  print "not ok 21\n";
+}
+
+if(UnityD64(-1) * DEC64_MIN == Math::Decimal64->new('-1', -398))
+  {print "ok 22\n"}
+else {
+  warn "\nDEC64_MIN * -1: ", UnityD64(-1) * DEC64_MIN, "\n";
+  print "not ok 22\n";
+}
+
+my $mintest4 = MEtoD64('4', -399);
+my $mintest5 = MEtoD64('5', -399);
+my $mintest6 = MEtoD64('6', -399);
+
+if(is_ZeroD64($mintest4) && $mintest4 == $mintest5) { print "ok 23\n"}
+else {
+  warn "\n\$mintest4: $mintest4\n\$mintest5: $mintest5\n";
+  print "not ok 23\n";
+}
+
+if($mintest6 == DEC64_MIN) {print "ok 24\n"}
+else {
+  warn "\n\$mintest6: $mintest6\n";
+  print "not ok 24\n";
+}
+
+my $maxtest = MEtoD64('1000000000000000', 369);
+
+$maxtest *= MEtoD64('1', 1);
+
+if(is_InfD64($maxtest)) {print "ok 25\n"}
+else {
+  warn "\n\$maxtest: $maxtest\n";
+  print "not ok 25\n";
 }

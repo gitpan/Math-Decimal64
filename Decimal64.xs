@@ -40,16 +40,15 @@ int  _is_neg_zero(_Decimal64 x) {
 
      if(x != 0.0DD) return 0;
 
-     buffer = malloc(2 * sizeof(char));
-
+     Newx(buffer, 2, char);
      sprintf(buffer, "%.0f", (double)x);
 
      if(strcmp(buffer, "-0")) {
-       free(buffer);
+       Safefree(buffer);
        return 0;
      }   
 
-     free(buffer);
+     Safefree(buffer);
      return 1;
 }
 
@@ -73,16 +72,16 @@ int  _is_neg_zero_NV(SV * x) {
 
      if(SvNV(x) != 0.0) return 0;
 
-     buffer = malloc(2 * sizeof(char));
+     Newx(buffer, 2, char);
 
      sprintf(buffer, "%.0f", (double)SvNV(x));
 
      if(strcmp(buffer, "-0")) {
-       free(buffer);
+       Safefree(buffer);
        return 0;
      }   
 
-     free(buffer);
+     Safefree(buffer);
      return 1;
 }
 
@@ -97,12 +96,49 @@ _Decimal64 _get_nan(int sign) {
      return -(inf/inf);
 }
 
+SV * _DEC64_MAX(void) {
+     _Decimal64 * d64;
+     SV * obj_ref, * obj;
+
+     Newx(d64, 1, _Decimal64);
+     if(d64 == NULL) croak("Failed to allocate memory in DEC64_MAX() function");
+
+     obj_ref = newSV(0);
+     obj = newSVrv(obj_ref, "Math::Decimal64");
+
+     *d64 = 9999999999999999e369DD;
+     
+
+     sv_setiv(obj, INT2PTR(IV,d64));
+     SvREADONLY_on(obj);
+     return obj_ref;
+}
+
+SV * _DEC64_MIN(void) {
+     _Decimal64 * d64;
+     SV * obj_ref, * obj;
+
+     Newx(d64, 1, _Decimal64);
+     if(d64 == NULL) croak("Failed to allocate memory in DEC64_MIN() function");
+
+     obj_ref = newSV(0);
+     obj = newSVrv(obj_ref, "Math::Decimal64");
+
+     *d64 = 1e-398DD;
+     
+
+     sv_setiv(obj, INT2PTR(IV,d64));
+     SvREADONLY_on(obj);
+     return obj_ref;
+}
+    
+
 SV * NaND64(int sign) {
      _Decimal64 * d64;
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in NaND64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -119,7 +155,7 @@ SV * InfD64(int sign) {
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in InfD64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -136,7 +172,7 @@ SV * ZeroD64(int sign) {
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in ZeroD64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -154,7 +190,7 @@ SV * UnityD64(int sign) {
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in UnityD64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -175,7 +211,7 @@ SV * Exp10(int power) {
        croak("Argument supplied to Exp10 function (%d) is out of allowable range", power);
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in Exp10() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -204,7 +240,7 @@ SV * _testvalD64(int sign) {
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in _testvalD64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -218,7 +254,7 @@ SV * _testvalD64(int sign) {
      return obj_ref;
 }
 
-SV * MEtoD64(char * mantissa, SV * exponent) {
+SV * _MEtoD64(char * mantissa, SV * exponent) {
 
      _Decimal64 * d64;
      SV * obj_ref, * obj;
@@ -229,7 +265,7 @@ SV * MEtoD64(char * mantissa, SV * exponent) {
      man = strtold(mantissa, &ptr);
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in NVtoD64() function");
+     if(d64 == NULL) croak("Failed to allocate memory in MEtoD64() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -355,6 +391,26 @@ int  have_strtod64(void) {
 
 SV * D64toNV(SV * x64) {
      return newSVnv((NV)(*(INT2PTR(_Decimal64*, SvIV(SvRV(x64))))));
+}
+
+void LDtoD64(SV * d64, SV * ld) {
+     if(sv_isobject(d64) && sv_isobject(ld)) {
+       if(strEQ(HvNAME(SvSTASH(SvRV(d64))), "Math::Decimal64") && strEQ(HvNAME(SvSTASH(SvRV(ld))), "Math::LongDouble")) {
+         *(INT2PTR(_Decimal64 *, SvIV(SvRV(d64)))) = (_Decimal64)*(INT2PTR(long double *, SvIV(SvRV(ld))));
+       }
+       else croak("Invalid object supplied to Math::LongDouble::LDtoD64");
+     }
+     else croak("Invalid argument supplied to Math::LongDouble::LDtoD64");
+}
+
+void D64toLD(SV * ld, SV * d64) {
+     if(sv_isobject(d64) && sv_isobject(ld)) {
+       if(strEQ(HvNAME(SvSTASH(SvRV(d64))), "Math::Decimal64") && strEQ(HvNAME(SvSTASH(SvRV(ld))), "Math::LongDouble")) {
+         *(INT2PTR(long double *, SvIV(SvRV(ld)))) = (long double)*(INT2PTR(_Decimal64 *, SvIV(SvRV(d64)))); 
+       }
+       else croak("Invalid object supplied to Math::LongDouble::D64toLD");
+     }
+     else croak("Invalid argument supplied to Math::LongDouble::D64toLD");
 }
 
 void DESTROY(SV *  rop) {
@@ -690,7 +746,7 @@ SV * _overload_abs(SV * a, SV * b, SV * third) {
      SV * obj_ref, * obj;
 
      Newx(d64, 1, _Decimal64);
-     if(d64 == NULL) croak("Failed to allocate memory in _overload_add() function");
+     if(d64 == NULL) croak("Failed to allocate memory in _overload_abs() function");
 
      obj_ref = newSV(0);
      obj = newSVrv(obj_ref, "Math::Decimal64");
@@ -731,7 +787,7 @@ int is_NaND64(SV * b) {
        if(strEQ(HvNAME(SvSTASH(SvRV(b))), "Math::Decimal64"))
          return _is_nan(*(INT2PTR(_Decimal64 *, SvIV(SvRV(b)))));
      }
-     croak("Invalid argument supplied to Math::Decimal64::_obj_is_neg_zero function");
+     croak("Invalid argument supplied to Math::Decimal64::is_NaND64 function");
 }
 
 int is_InfD64(SV * b) {
@@ -739,7 +795,7 @@ int is_InfD64(SV * b) {
        if(strEQ(HvNAME(SvSTASH(SvRV(b))), "Math::Decimal64"))
          return _is_inf(*(INT2PTR(_Decimal64 *, SvIV(SvRV(b)))));
      }
-     croak("Invalid argument supplied to Math::Decimal64::_obj_is_neg_zero function");
+     croak("Invalid argument supplied to Math::Decimal64::is_InfD64 function");
 }
 
 int is_ZeroD64(SV * b) {
@@ -749,7 +805,7 @@ int is_ZeroD64(SV * b) {
          if (*(INT2PTR(_Decimal64 *, SvIV(SvRV(b)))) == 0.0DD) return 1;
          return 0;
      }
-     croak("Invalid argument supplied to Math::Decimal64::_obj_is_neg_zero function");
+     croak("Invalid argument supplied to Math::Decimal64::is_ZeroD64 function");
 }
 
 void _D64toME(SV * a) {
@@ -767,19 +823,49 @@ void _D64toME(SV * a) {
             XSRETURN(2);
           }
 
-          buffer = malloc(32 * sizeof(char));
+          Newx(buffer, 32, char);
           sprintf(buffer, "%.15Le", (long double)t);
           ST(0) = sv_2mortal(newSVpv(buffer, 0));
           ST(1) = &PL_sv_undef;
-          free(buffer);
+          Safefree(buffer);
           XSRETURN(2);
        }
        else croak("Invalid object supplied to Math::Decimal64::D64toME function");
      }
      else croak("Invalid argument supplied to Math::Decimal64::D64toME function");
 }
- 
 
+void _c2ld(char * mantissa) { /* convert using %.15Le */
+     dXSARGS;
+     long double man;
+     char *ptr, *buffer;
+
+     man = strtold(mantissa, &ptr);
+     Newx(buffer, 32, char);
+     sprintf(buffer, "%.15Le", man);
+
+     ST(0) = sv_2mortal(newSVpv(buffer, 0));
+     Safefree(buffer);
+     XSRETURN(1);
+}
+
+void _c2d(char * mantissa) { /* convert using %.15e */
+     dXSARGS;
+     double man;
+     char *ptr, *buffer;
+
+     man = strtod(mantissa, &ptr);
+     Newx(buffer, 32, char);
+     sprintf(buffer, "%.15e", man);
+
+     ST(0) = sv_2mortal(newSVpv(buffer, 0));
+     Safefree(buffer);
+     XSRETURN(1);
+}
+ 
+SV * _wrap_count(void) {
+     return newSVuv(PL_sv_count);
+}
 MODULE = Math::Decimal64	PACKAGE = Math::Decimal64	
 
 PROTOTYPES: DISABLE
@@ -796,6 +882,14 @@ _is_inf_NV (x)
 int
 _is_neg_zero_NV (x)
 	SV *	x
+
+SV *
+_DEC64_MAX ()
+		
+
+SV *
+_DEC64_MIN ()
+		
 
 SV *
 NaND64 (sign)
@@ -822,7 +916,7 @@ _testvalD64 (sign)
 	int	sign
 
 SV *
-MEtoD64 (mantissa, exponent)
+_MEtoD64 (mantissa, exponent)
 	char *	mantissa
 	SV *	exponent
 
@@ -853,6 +947,40 @@ have_strtod64 ()
 SV *
 D64toNV (x64)
 	SV *	x64
+
+void
+LDtoD64 (d64, ld)
+	SV *	d64
+	SV *	ld
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	LDtoD64(d64, ld);
+	if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+	  PL_markstack_ptr = temp;
+	  XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+	return; /* assume stack size is correct */
+
+void
+D64toLD (ld, d64)
+	SV *	ld
+	SV *	d64
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	D64toLD(ld, d64);
+	if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+	  PL_markstack_ptr = temp;
+	  XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+	return; /* assume stack size is correct */
 
 void
 DESTROY (rop)
@@ -1049,4 +1177,40 @@ _D64toME (a)
         }
         /* must have used dXSARGS; list context implied */
 	return; /* assume stack size is correct */
+
+void
+_c2ld (mantissa)
+	char *	mantissa
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	_c2ld(mantissa);
+	if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+	  PL_markstack_ptr = temp;
+	  XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+	return; /* assume stack size is correct */
+
+void
+_c2d (mantissa)
+	char *	mantissa
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	_c2d(mantissa);
+	if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+	  PL_markstack_ptr = temp;
+	  XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+	return; /* assume stack size is correct */
+
+SV *
+_wrap_count ()
+		
 

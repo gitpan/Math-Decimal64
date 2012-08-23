@@ -6,8 +6,11 @@ Decimal64.xs
 Makefile.PL
 t/boundaries.t
 t/conv.t
+t/double_overflow.t
 t/dec_inc.t
 t/general.t
+t/lengthy_mantissa.t
+t/long_double.t
 t/new.t
 t/overload_int.t
 t/overload_spaceship.t

@@ -1,3 +1,7 @@
+0.03
+ - Add LDtoD64 and D64toLD (conversions between Math::LongDouble and
+   Math::Decimal64 objects).
+
 0.02
  - Small change to _sci2me() to avoid 'uninitialized' warnings on 5.10 (and
    perhaps earlier).

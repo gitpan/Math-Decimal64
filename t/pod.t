@@ -11,3 +11,5 @@ else {
   warn "\nPod::Simple version: $Pod::Simple::VERSION\n";
   Test::Pod::all_pod_files_ok();
 }
+
+

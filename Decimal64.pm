@@ -10,21 +10,25 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 $VERSION = eval $VERSION;
+
+use subs qw(DEC64_MAX DEC64_MIN);
 
 DynaLoader::bootstrap Math::Decimal64 $Math::Decimal64::VERSION;
 
 @Math::Decimal64::EXPORT = ();
 @Math::Decimal64::EXPORT_OK = qw(
     MEtoD64 UVtoD64 IVtoD64 NVtoD64 PVtoD64 STRtoD64 D64toME D64toNV 
-    InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64   
+    InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64
+    D64toLD LDtoD64 DEC64_MAX DEC64_MIN   
     assignME Exp10 have_strtod64
     );
 
 %Math::Decimal64::EXPORT_TAGS = (all => [qw(
     MEtoD64 UVtoD64 IVtoD64 NVtoD64 PVtoD64 STRtoD64 D64toME D64toNV 
-    InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64   
+    InfD64 NaND64 UnityD64 ZeroD64 is_InfD64 is_NaND64 is_ZeroD64
+    D64toLD LDtoD64 DEC64_MAX DEC64_MIN  
     assignME Exp10 have_strtod64
     )]);
 
@@ -145,6 +149,28 @@ sub D64toME {
     return @ret;
 }
 
+sub MEtoD64 {
+  # Check that 2 args are supplied
+  die "MEtoD64 takes 2 args" if @_ != 2;
+
+  my $arg1 = shift;
+  my $arg2 = shift;
+
+  die "Invalid 1st arg ($arg1) to MEtoD64" if $arg1 =~ /[^0-9\-]/;
+  die "Invalid 2nd arg ($arg2) to MEtoD64" if $arg2 =~ /[^0-9\-]/;
+
+  my $len_1 = length($arg1);
+  $len_1-- if $arg1 =~ /^\-/;
+
+  if($len_1 > 16) {
+    die "$arg1 exceeds _Decimal64 precision.",
+        " It needs to be shortened to no more than 16 decimal digits";
+  }
+
+  return _MEtoD64($arg1, $arg2);
+
+}
+
 sub _sci2me {
     my @ret = split /e/i, $_[0];
     chop $ret[0] while $ret[0] =~ /0\b/;
@@ -155,6 +181,9 @@ sub _sci2me {
     $ret[1] -= $adj;
     return @ret; 
 }
+
+sub DEC64_MAX {return _DEC64_MAX()}
+sub DEC64_MIN {return _DEC64_MIN()}
 
 1;
 
@@ -181,8 +210,8 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
    is also equivalent to -9999999999999999e369).
    The largest expressable value is 9.999999999999999e384 (which
    also equivalent to 9999999999999999e369).
-   The closest we can get to zero is (plus or minus) 1e-383
-   (which is also equivalent to 1000000000000000e-398).
+   The closest we can get to zero is (plus or minus) 1e-384
+   (which is also equivalent to 1000000000000000e-399).
 
    This module allows decimal floating point arithmetic via
    operator overloading - see "OVERLOADING".
@@ -203,7 +232,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
     $mantissa = -9307199254740993;   # will assign wrong value
 
    So ... where you see "$mantissa" in the following docs, think
-   "*string* of up to 16 decimal digits".
+   *string* of up to 16 decimal digits".
 
 =head1 SYNOPSIS
 
@@ -227,15 +256,19 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
     Arguments to the overloaded operations must be Math::Decimal64
     objects.
 
-     $d64_2 = $d64_1 + 3.0; # currently an error. Do either:
+     $d64_2 = $d64_1 + 3.1; # currently an error. Do either:
 
-     $d64_2 = $d64_1 + MEtoD64('3',0); # or:
+     $d64_2 = $d64_1 + MEtoD64('31',-1); # or:
      $d64_2 = $d64_1 + Math::Decimal64->new('3',0);
 
 =head1 ASSIGNMENT FUNCTIONS
 
     The following create and assign a new Math::Decimal64 object.
+    Afaik, MEtoD64 and STRtoD64 will assign the values accurately;
+    the other assignment functions can be subject to rounding 
+    errors under certain conditions - use them with caution.
 
+     ###################################
      # Assign from mantissa and exponent
      $d64 = MEtoD64($mantissa, $exponent);
        
@@ -244,6 +277,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       Doing Math::Decimal64->new($mantissa, $exponent) will also
       create and assign using MEtoD64().
 
+     #####################################
      # Assign from a UV (unsigned integer)
      $d64 = UVtoD64($uv);
 
@@ -252,6 +286,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       Doing Math::Decimal64->new($uv) will also create and assign
       using UVtoD64().
 
+     ####################################
      # Assign from an IV (signed integer)
      $d64 = IVtoD64($iv);
 
@@ -260,6 +295,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       Doing Math::Decimal64->new($iv) will also create and assign
       using IVtoD64().
 
+     ###########################
      # Assign from an NV (real))
      $d64 = NVtoD64($nv);
 
@@ -267,9 +303,8 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
 
       Doing Math::Decimal64->new($nv) will also create and assign
       using NVtoD64().
-      Not recommended - especially on perls where nvtype is a
-      double.
 
+     ######################
      # Assign from a string
      $d64 = PVtoD64($string);
 
@@ -281,13 +316,15 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       Doing Math::Decimal64->new($string) will also create and
       assign using PVtoD64().
 
+     ################################################
      # Assign from an existing Math::Decimal64 object
      $d64 = D64toD64($d64_0);
      Also:
       $d64 = Math::Decimal64->new($d64_0);
       $d64 = $d64_0; # uses overloaded '='
 
-     # Assign using new():
+     ####################
+     # Assign using new()
      $d64 = Math::Decimal64->new([$arg1, [$arg2]]);
       This function calls one of the above functions. It
       determines the appropriate function to call by examining
@@ -298,15 +335,16 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       If one argument is provided, that arg's flags are used
       to determine the appropriate function to call.
 
+     #######################
+     # Assign using STRtoD64
      $d64 = STRtoD64($string);
       If your C compiler provides the strtod64 function, and
       you configured the Makefile.PL to enable access to that
       function then you can use this function. 
       usage is is as for PVtoD64().
 
-    The following function assigns a new value to an already-
-    existing Math::Decimal64 object:
-
+     ##############################
+     # Assign to an existing object
      assignME($d64, $mantissa, $exponent);
       Assigns the value represented by ($mantissa, $exponent)
       to the Math::Decimal64 object, $d64.
@@ -330,18 +368,53 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
      $d64 = ZeroD64($sign);
       If $sign < 0, returns a Math::Decimal64 object set to
       negative zero; else returns a Math::Decimal64 object set to 
-      positive zero.
+      zero.
+
+=head1 RETRIEVAL FUNCTIONS
+
+    The following functions provide ways of seeing the value of
+    Math::Decimal64 objects.
+
+     $nv = D64toNV($d64);
+      This function returns the value of the Math::Decimal64
+      object to a perl scalar (NV). Under certain conditions
+      it may not translate the value accurately.
+
+     ($mantissa, $exponent) = D64toME($d64);
+      Returns the value of the Math::Decimal object as a 
+      mantissa (string of up to 16 decimal digits) and exponent.
+      You can then manipulate those variables to output the
+      value in your preferred format. Afaik, the value will be
+      translated accurately.
+
+     print $d64;
+      Will print the value in the format (eg) -12345e-2, which
+      equates to the decimal -123.45. Afaik, the value will be
+      translated accurately.
 
 =head1 OTHER FUNCTIONS
+     $d64 = DEC64_MAX; # 9999999999999999e369
+     $d64 = DEC64_MIN; # 1e-398
+      DEC64_MAX is the largest positive finite representable
+      _Decimal64 value.
+      DEC64_MIN is the smallest positive non-zero representable
+      _Decimal64 value.
+      Multiply these by UnityD64(-1) to get their negative
+      counterparts.
 
      $d64 = Exp10($pow);
       Returns a Math::Decimal64 object with a value of
-      10 ** $pow, for $pow in the range (-398 .. 383). Croaks
+      10 ** $pow, for $pow in the range (-398 .. 384). Croaks
       with appropriate message if $pow is not within that range.
 
      $bool = have_strtod64();
-      Returns true if the STRtoD64() function is functional for
-      your build of Math::Decimal64. Else returns false.
+      Returns true if, when building Math::Decimal64,
+      the Makefile.PL was configured to make the STRtoD64()
+      function available for your build of Math::Decimal64. Else
+      returns false.
+      (No use making this functionc available if your compiler's
+      C library doesn't provide the strtod64 function.)
+      
 
      $test = is_ZeroD64($d64);
       Returns:
@@ -360,28 +433,6 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
         1 if $d64 is a NaN;
         0 if $d64 is not a NaN.
 
-
-     
-
-=head1 RETRIEVAL FUNCTIONS
-
-    The following functions provide ways of seeing the value of
-    Math::Decimal64 objects.
-
-     $nv = D64toNV($d64);
-      This function returns the value of the Math::Decimal64
-      object to a perl scalar (NV). It does not always
-      translate the value accurately.
-
-     ($mantissa, $exponent) = D64toME($d64);
-      Returns the value of the Math::Decimal object as a 
-      mantissa (string of up to 16 decimal digits) and exponent.
-      You can then manipulate those variables to output the
-      value in your preferred format.
-
-     print $d64;
-      Will print the value in the format (eg) -12345e-2, which
-      equates to the decimal -123.45.
 
 =head1 LICENSE
 
