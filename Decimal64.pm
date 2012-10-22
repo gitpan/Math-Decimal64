@@ -10,7 +10,7 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 $VERSION = eval $VERSION;
 
 use subs qw(DEC64_MAX DEC64_MIN);
@@ -259,7 +259,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
      $d64_2 = $d64_1 + 3.1; # currently an error. Do either:
 
      $d64_2 = $d64_1 + MEtoD64('31',-1); # or:
-     $d64_2 = $d64_1 + Math::Decimal64->new('3',0);
+     $d64_2 = $d64_1 + Math::Decimal64->new('31',-1);
 
 =head1 ASSIGNMENT FUNCTIONS
 

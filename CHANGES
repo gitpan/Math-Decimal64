@@ -1,3 +1,8 @@
+0.04
+ - Fix bugs in t/lengthy_mantissa.t. (A '-' in a regex needed to be escaped.)
+   Also the precise number that appears in $@ for test 3 will vary, depending
+   upon nvsize. (Test 3 modified to accommodate this.)
+
 0.03
  - Add LDtoD64 and D64toLD (conversions between Math::LongDouble and
    Math::Decimal64 objects).

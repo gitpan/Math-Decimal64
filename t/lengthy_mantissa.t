@@ -25,7 +25,10 @@ else {
 
 eval{Math::Decimal64->new(-1234567.8901234567, -123);};
 
-if($@ =~ /Invalid 1st arg \(-1234567.89012346\) to MEtoD64/) {print "ok 3\n"}
+if($@ =~ /Invalid 1st arg \(\-1234567\.8901234/) {
+  warn "\$\@: $@\n";
+  print "ok 3\n";
+}
 else {
   warn "\$\@: $@\n";
   print "not ok 3\n";
