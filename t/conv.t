@@ -29,7 +29,7 @@ else {
   print "not ok 2\n";
 }
 
-my $nan = NaND64(-1);
+my $nan = NaND64();
 ($man, $exp) = D64toME($nan);
 if($man != $man && $exp == 0) {print "ok 3\n"}
 else {

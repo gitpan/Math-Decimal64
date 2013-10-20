@@ -1,3 +1,14 @@
+0.05
+ - Fix D64toME() so that it works correctly on powerpc processors.
+ - Add FR64toME and pFR.
+ - Document LDtoD64 and D64toLD.
+ - Add assignInf, assignNaN, assignPV.
+ - Allow overloaded operations to accept integers (IV/UV).
+ - Alter the way that strEQ gets hold of HvNAME(SvSTASH(SvRV(sv))) - so that -Wall
+    doesn't emit "null argument" warnings. (Thanks Daniel Kahn Gillmor.)
+ - Have only *one* NaN ( = inf/inf). Originally we could also set NaN to -(inf/inf),
+   but this is stupid and can cause problems.
+
 0.04
  - Fix bugs in t/lengthy_mantissa.t. (A '-' in a regex needed to be escaped.)
    Also the precise number that appears in $@ for test 3 will vary, depending

@@ -4,7 +4,7 @@ use Math::Decimal64 qw(:all);
 
 print "1..7\n";
 
-my $nan = NaND64(1);
+my $nan = NaND64();
 my $ninf = InfD64(-1);
 my $pinf = InfD64(1);
 my $zero = ZeroD64(-1);

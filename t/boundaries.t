@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use Math::Decimal64 qw(:all);
 
-print "1..25\n";
+print "1..33\n";
 
 my($man, $exp);
 
@@ -190,3 +190,60 @@ else {
   warn "\n\$maxtest: $maxtest\n";
   print "not ok 25\n";
 }
+
+#############################################
+#############################################
+
+if(is_ZeroD64(DEC64_MIN() / MEtoD64('2', 0))) {print "ok 26\n"}
+else {
+  warn "\n", DEC64_MIN() / MEtoD64('2', 0), "\n";
+  print "not ok 26\n";
+}
+
+if(DEC64_MIN == DEC64_MIN() / MEtoD64('19999', -4)) {print "ok 27\n"}
+else {
+  warn "\n", DEC64_MIN() / MEtoD64('19999', -4), "\n";
+  print "not ok 27\n";
+}
+
+if(is_InfD64(DEC64_MAX() + MEtoD64('1', 369)) == 1) {print "ok 28\n"}
+else {
+  warn "\n", DEC64_MAX() + MEtoD64('1', 369), "\n";
+  print "not ok 28\n";
+}
+
+if(DEC64_MAX == DEC64_MAX() + MEtoD64('1', 368)) {print "ok 29\n"}
+else {
+  warn "\n", DEC64_MAX() + MEtoD64('1', 368), "\n";
+  print "not ok 29\n";
+}
+
+#############################################
+#############################################
+
+if(is_ZeroD64(DEC64_MIN() * UnityD64(-1) / MEtoD64('2', 0))) {print "ok 30\n"}
+else {
+  warn "\n", DEC64_MIN() * UnityD64(-1) / MEtoD64('2', 0), "\n";
+  print "not ok 30\n";
+}
+
+if(DEC64_MIN() * UnityD64(-1) == DEC64_MIN() * UnityD64(-1) / MEtoD64('19999', -4)) {print "ok 31\n"}
+else {
+  warn "\n", DEC64_MIN() * UnityD64(-1) / MEtoD64('19999', -4), "\n";
+  print "not ok 31\n";
+}
+
+if(is_InfD64(DEC64_MAX() * UnityD64(-1) - MEtoD64('1', 369)) == -1) {print "ok 32\n"}
+else {
+  warn "\n", DEC64_MAX() * UnityD64(-1) - MEtoD64('1', 369), "\n";
+  print "not ok 32\n";
+}
+
+if(DEC64_MAX() * UnityD64(-1) == DEC64_MAX() * UnityD64(-1) + MEtoD64('1', 368)) {print "ok 33\n"}
+else {
+  warn "\n", DEC64_MAX() * UnityD64(-1) + MEtoD64('1', 368), "\n";
+  print "not ok 33\n";
+}
+
+#############################################
+#############################################

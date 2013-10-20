@@ -5,7 +5,7 @@ use Math::Decimal64 qw(:all);
 print "1..6\n";
 
 my $inf = InfD64(-1);
-my $nan = NaND64(-1);
+my $nan = NaND64();
 
 if(int($inf) == $inf && is_InfD64(int($inf))){print "ok 1\n"}
 else {print "not ok 1\n"}

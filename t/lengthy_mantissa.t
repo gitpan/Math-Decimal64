@@ -26,7 +26,6 @@ else {
 eval{Math::Decimal64->new(-1234567.8901234567, -123);};
 
 if($@ =~ /Invalid 1st arg \(\-1234567\.8901234/) {
-  warn "\$\@: $@\n";
   print "ok 3\n";
 }
 else {

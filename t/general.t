@@ -13,22 +13,22 @@ my $d64_2 = PVtoD64("189.651");
 my $x64_2 = D64toNV($d64_2);
 
 
-if(PVtoD64( 123.457 )  == NVtoD64( 123.457 )) {print "ok 1\n"}
+if(PVtoD64( 123.5 )  == NVtoD64( 123.5 )) {print "ok 1\n"}
 else {print "not ok 1\n"}
-if( PVtoD64("123.457") == NVtoD64("123.457")) {print "ok 2\n"}
+if( PVtoD64("123.5") == NVtoD64("123.5")) {print "ok 2\n"}
 else {print "not ok 2\n"}
-if( PVtoD64("123.457") == NVtoD64( 123.457 )) {print "ok 3\n"}
+if( PVtoD64("123.5") == NVtoD64( 123.5 )) {print "ok 3\n"}
 else {print "not ok 3\n"}
-if( PVtoD64( 123.457 ) == NVtoD64("123.457")) {print "ok 4\n"}
+if( PVtoD64( 123.5 ) == NVtoD64("123.5")) {print "ok 4\n"}
 else {print "not ok 4\n"}
-if( PVtoD64("123.457") == PVtoD64( 123.457 )) {print "ok 5\n"}
+if( PVtoD64("123.5") == PVtoD64( 123.5 )) {print "ok 5\n"}
 else {print "not ok 5\n"}
-if( NVtoD64("123.457") == NVtoD64( 123.457 )) {print "ok 6\n"}
+if( NVtoD64("123.5") == NVtoD64( 123.5 )) {print "ok 6\n"}
 else {print "not ok 6\n"}
 
-my $add = PVtoD64("190.8824");
-my $mul = PVtoD64("233.5362414");
-my $sub = PVtoD64("-188.4196");
+my $add = MEtoD64("1908824", -4);
+my $mul = MEtoD64("2335362414", -7);
+my $sub = MEtoD64("-1884196", -4);
 my $div = PVtoD64("0.0064929792091789655736062557012618");
 
 if($d64 + $d64_2 == $add) {print "ok 7\n"}
@@ -245,8 +245,8 @@ else {
 
 #################################
 
-my $pnan = NaND64(1);
-my $nnan = NaND64(-1);
+my $pnan = NaND64();
+my $nnan = NaND64();
 
 my $pinf = InfD64(1);
 my $ninf = InfD64(-1);
