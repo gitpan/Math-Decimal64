@@ -25,4 +25,4 @@ else {
   warn "Skipping all tests - no Math::LongDouble\n";
   for(1..$t) {print "ok $t\n"}
 }
- 
+

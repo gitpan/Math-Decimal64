@@ -8,13 +8,17 @@ if($@) {
   print "1..1\n";
   warn " Skipping all tests: Couldn't load Math::MPFR\n";
   print "ok 1\n";
+  exit 0;
 }
-elsif(!Math::MPFR::_MPFR_WANT_DECIMAL_FLOATS()) {
+
+eval {Math::MPFR::_MPFR_WANT_DECIMAL_FLOATS();};
+
+if($@ || !Math::MPFR::_MPFR_WANT_DECIMAL_FLOATS()) {
   print "1..1\n";
   warn " Skipping all tests: This build of Math::MPFR doesn't\n",
        " support Decimal64 conversion functions\n";
   print "ok 1\n";
-}
+  }
 else {
   print "1..11\n";
 
@@ -94,7 +98,7 @@ else {
                            # are out of bounds for MEtoD64().
     for my $eg(1 .. 10) {
       my $man = int(rand(500));
-      if($eg % 2) {$man = '-' . $man} 
+      if($eg % 2) {$man = '-' . $man}
       my $d64_1 = Math::Decimal64->new($man, $prec); # calls MEtoD64()
       my ($m, $p) = FR64toME($d64_1);
       my $d64_2 = Math::Decimal64->new($m, $p);
@@ -176,7 +180,7 @@ else {
 
   if($ok) {print "ok 11\n"}
   else {print "not ok 11\n"}
-          
+
 }
 
 sub rand_x {

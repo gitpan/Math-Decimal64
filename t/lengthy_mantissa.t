@@ -1,4 +1,4 @@
-# Tests to check what happens when mantissas consisting of more than 
+# Tests to check what happens when mantissas consisting of more than
 # 16 decimal digits are supplied to MEtoD64.
 
 use warnings;

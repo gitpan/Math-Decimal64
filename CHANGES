@@ -1,3 +1,10 @@
+0.06
+ - Fix t/conv_math_mpfr.t to cater for the case that Math::MPFR loads but is an older
+   version that doesn't provide the Math::MPFR::_MPFR_WANT_DECIMAL_FLOATS function.
+ - Define PERL_NO_GET_CONTEXT.
+ - Add metadata to Makefile.PL.
+ - Work around compiler/libc bug in handling of the value 897e-292. (Affects PPC only.)
+
 0.05
  - Fix D64toME() so that it works correctly on powerpc processors.
  - Add FR64toME and pFR.
@@ -26,4 +33,4 @@
    with Exp10.
 
 0.01
- - First release.  
+ - First release.

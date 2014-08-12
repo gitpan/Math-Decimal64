@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use Math::Decimal64 qw(:all);
 
-print "1..9\n";
+print "1..11\n";
 
 my $check2 = Math::Decimal64->new(10, 0);
 my $add    = Math::Decimal64->new(1, -2);
@@ -39,10 +39,16 @@ else {
 
 my $inf = InfD64(-1);
 ($man, $exp) = D64toME($inf);
-if(($man / $man) != ($man /$man) && $exp == 0) {print "ok 4\n"}
+if(($inf / $inf) != ($inf /$inf) && $exp == 0) {print "ok 4\n"}
 else {
   warn "\$man: $man \$exp: $exp\n";
   print "not ok 4\n";
+}
+
+if(($man / $man) != ($man /$man) && $exp == 0) {print "ok 5\n"}
+else {
+  warn "\$man: $man \$exp: $exp\n";
+  print "not ok 5\n";
 }
 
 $ok = 1;
@@ -51,7 +57,7 @@ for my $prec(0 .. 382) { # Exponents >382 with 3-digit (integer) significands
                          # are out of bounds for MEtoD64().
   for my $eg(1 .. 10) {
     my $man = int(rand(500));
-    if($eg % 2) {$man = '-' . $man} 
+    if($eg % 2) {$man = '-' . $man}
     my $d64_1 = Math::Decimal64->new($man, $prec); # calls MEtoD64()
     my ($m, $p) = D64toME($d64_1);
     my $d64_2 = Math::Decimal64->new($m, $p);
@@ -64,8 +70,8 @@ for my $prec(0 .. 382) { # Exponents >382 with 3-digit (integer) significands
   }
 }
 
-if($ok) {print "ok 5\n"}
-else {print "not ok 5\n"}
+if($ok) {print "ok 6\n"}
+else {print "not ok 6\n"}
 
 $ok = 1;
 
@@ -85,8 +91,8 @@ for my $prec(0 .. 383) {
   }
 }
 
-if($ok) {print "ok 6\n"}
-else {print "not ok 6\n"}
+if($ok) {print "ok 7\n"}
+else {print "not ok 7\n"}
 
 $ok = 1;
 
@@ -108,8 +114,8 @@ for my $size(1 .. 16) {
   }
 }
 
-if($ok) {print "ok 7\n"}
-else {print "not ok 7\n"}
+if($ok) {print "ok 8\n"}
+else {print "not ok 8\n"}
 
 $ok = 1;
 
@@ -131,17 +137,26 @@ for my $size(1 .. 16) {
   }
 }
 
-if($ok) {print "ok 8\n"}
-else {print "not ok 8\n"}
+if($ok) {print "ok 9\n"}
+else {print "not ok 9\n"}
 
 $ok = 1;
 
 $d64_1 = Math::Decimal64->new('8069610750070607', 1);
 ($man, $exp) = D64toME($d64_1);
-if($man eq '8069610750070607' && $exp == 1) {print "ok 9\n"}
+if($man eq '8069610750070607' && $exp == 1) {print "ok 10\n"}
 else {
   warn "\$man: $man \$exp: $exp\n";
-  print "not ok 9\n";
+  print "not ok 10\n";
+}
+
+# Fails on my powerpc box - a bug in the compiler/libc print formatting (sprintf).
+$d64_1 = Math::Decimal64->new('897', -292);
+($man, $exp) = D64toME($d64_1);
+if($man eq '897' && $exp == -292) {print "ok 11\n"}
+else {
+  warn "\$man: $man \$exp: $exp\n";
+  print "not ok 11\n";
 }
 
 
