@@ -14,6 +14,9 @@ for(@ARGV) {
 }
 $defines .= " -DSTRTOD64_AVAILABLE" if $strtod64;
 
+if($Config{byteorder} =~ /^1234/) {$defines .= " -DWE_HAVE_LENDIAN"}
+else{$defines .= " -DWE_HAVE_BENDIAN"}
+
 my %options = %{
 {
   NAME => 'Math::Decimal64',

@@ -9,6 +9,7 @@ t/boundaries.t
 t/conv.t
 t/conv_math_mpfr.t
 t/double_overflow.t
+t/decode_d64.t
 t/dec_inc.t
 t/general.t
 t/IV_arith.t
