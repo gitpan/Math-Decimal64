@@ -10,7 +10,7 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 #$VERSION = eval $VERSION;
 
 use subs qw(DEC64_MAX DEC64_MIN);
@@ -25,6 +25,7 @@ DynaLoader::bootstrap Math::Decimal64 $Math::Decimal64::VERSION;
     D64toLD LDtoD64 DEC64_MAX DEC64_MIN
     assignME assignInf assignNaN assignPV Exp10 have_strtod64
     decode_d64 decode_bid decode_dpd d64_bytes hex2bin d64_fmt
+    get_sign get_exp PVtoME MEtoPV assignDPD DPDtoD64
     );
 
 %Math::Decimal64::EXPORT_TAGS = (all => [qw(
@@ -34,6 +35,7 @@ DynaLoader::bootstrap Math::Decimal64 $Math::Decimal64::VERSION;
     D64toLD LDtoD64 DEC64_MAX DEC64_MIN
     assignME assignInf assignNaN assignPV Exp10 have_strtod64
     decode_d64 decode_bid decode_dpd d64_bytes hex2bin d64_fmt
+    get_sign get_exp PVtoME MEtoPV assignDPD DPDtoD64
     )]);
 
 use overload
@@ -62,7 +64,7 @@ use overload
   'int'   => \&_overload_int,
 ;
 
-%Math::Decimal64::dpd_correlation = d64_fmt() eq 'DPD' ? (
+%Math::Decimal64::dpd_encode = d64_fmt() eq 'DPD' ? (
      '0000000000' => '000', '0000000001' => '001', '0000000010' => '002', '0000000011' => '003',
      '0000000100' => '004', '0000000101' => '005', '0000000110' => '006', '0000000111' => '007',
      '0000001000' => '008', '0000001001' => '009', '0000010000' => '010', '0000010001' => '011',
@@ -315,7 +317,64 @@ use overload
      '1110011110' => '996', '1110011111' => '997', '0011111110' => '998', '0011111111' => '999',
 ) : ();
 
+#######################################################################
+#######################################################################
+
+# %Math::Decimal64::dpd_decode is simply %Math::Decimal64::dpd_encode
+# with the keys and values interchanged.
+
+for my $key(keys(%Math::Decimal64::dpd_encode)) {
+  $Math::Decimal64::dpd_decode{$Math::Decimal64::dpd_encode{$key}} = $key;
+}
+
+#######################################################################
+#######################################################################
+
+%Math::Decimal64::bid_decode = d64_fmt() eq 'BID' ? (
+ 0 => MEtoD64('1' . ('0' x 15), 0), 1 => MEtoD64('1' . ('0' x 14), 0),
+ 2 => MEtoD64('1' . ('0' x 13), 0), 3 => MEtoD64('1' . ('0' x 12), 0),
+ 4 => MEtoD64('1' . ('0' x 11), 0), 5 => MEtoD64('1' . ('0' x 10), 0),
+ 6 => MEtoD64('1' . ('0' x 9), 0), 7 => MEtoD64('1' . ('0' x 8), 0),
+ 8 => MEtoD64('1' . ('0' x 7), 0), 9 => MEtoD64('1' . ('0' x 6), 0),
+ 10 => MEtoD64('1' . ('0' x 5), 0), 11 => MEtoD64('1' . ('0' x 4), 0),
+ 12 => MEtoD64('1' . ('0' x 3), 0), 13 => MEtoD64('1' . ('0' x 2), 0),
+ 14 => MEtoD64('1' . ('0' x 1), 0), 15 => MEtoD64('1', 0)
+) : ();
+
+#######################################################################
+#######################################################################
+
+$Math::Decimal64::nan_str  = unpack("a*", pack( "B*", '011111' . ('0' x 58)));
+$Math::Decimal64::ninf_str = unpack("a*", pack( "B*", '11111'  . ('0' x 59)));
+$Math::Decimal64::pinf_str = unpack("a*", pack( "B*", '01111'  . ('0' x 59)));
+$Math::Decimal64::fmt = d64_fmt();
+
+#######################################################################
+#######################################################################
+
+sub _decode_mant {
+  my $val = shift;
+  my $ret = '';
+  for my $i(0 .. 15) {
+    my $count = 0;
+    if($val > 0) {
+      while($val >= $Math::Decimal64::bid_decode{$i}) {
+        $val -= $Math::Decimal64::bid_decode{$i};
+        $count++;
+      }
+    }
+    $ret .= $count;
+  }
+  return $ret;
+}
+
+#######################################################################
+#######################################################################
+
 sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking
+
+#######################################################################
+#######################################################################
 
 sub _overload_string {
     my @ret = D64toME($_[0]);
@@ -323,11 +382,17 @@ sub _overload_string {
     return $ret[0] . 'e' . $ret[1];
 }
 
+#######################################################################
+#######################################################################
+
 sub pFR {
     my @ret = FR64toME($_[0]);
     if(is_InfD64($_[0]) || !$_[0]) {print $ret[0]}
     else {print $ret[0] . "e" . $ret[1]}
 }
+
+#######################################################################
+#######################################################################
 
 sub _overload_int {
     if(is_NaND64($_[0]) || is_InfD64($_[0]) || is_ZeroD64($_[0])) {return $_[0]}
@@ -344,6 +409,9 @@ sub _overload_int {
     substr($man, $exp, -$exp, '');
     return MEtoD64($man, 0);
 }
+
+#######################################################################
+#######################################################################
 
 sub new {
 
@@ -403,6 +471,9 @@ sub new {
     die "Bad argument given to new";
 }
 
+#######################################################################
+#######################################################################
+
 sub D64toME {
     return ('-0', '0') if (is_ZeroD64($_[0]) == -1); # Negative Zero.
     my @ret = _D64toME($_[0]);
@@ -411,6 +482,9 @@ sub D64toME {
     }
     return @ret;
 }
+
+#######################################################################
+#######################################################################
 
 sub FR64toME {
 
@@ -430,6 +504,9 @@ sub FR64toME {
   return ($man, $exp);
 }
 
+#######################################################################
+#######################################################################
+
 sub MEtoD64 {
   # Check that 2 args are supplied
   die "MEtoD64 takes 2 args" if @_ != 2;
@@ -440,17 +517,57 @@ sub MEtoD64 {
   die "Invalid 1st arg ($arg1) to MEtoD64" if $arg1 =~ /[^0-9\-]/;
   die "Invalid 2nd arg ($arg2) to MEtoD64" if $arg2 =~ /[^0-9\-]/;
 
-  my $len_1 = length($arg1);
+  my $len_1 = length $arg1;
   $len_1-- if $arg1 =~ /^\-/;
 
-  if($len_1 > 16) {
-    die "$arg1 exceeds _Decimal64 precision.",
-        " It needs to be shortened to no more than 16 decimal digits";
+  if($len_1 > 16 || $arg2 < -398) {
+    die "$arg1 exceeds _Decimal64 precision. It needs to be shortened to no more than 16 decimal digits"
+      if $len_1 > 16;
+    ($arg1, $arg2) = _round_as_needed($arg1, $arg2);
   }
 
   return _MEtoD64($arg1, $arg2);
 
 }
+
+#######################################################################
+#######################################################################
+
+# Values such as (d, -400), (dd, -401), (ddd, -402), etc evaluate to zero.
+# But values such as (dddd, -400), (ddd, -401), (dddddddd, -402), etc may be non-zero.
+# In such cases we'll remove the ignored (trailing) digits, rounding the leading
+# digits to nearest - tied to even for midway cases.
+
+sub _round_as_needed {
+   my($sign, $man, $exp) = ('', shift, shift);
+
+   if($man =~ /^\-/) {
+     $man =~ s/^\-//;
+     $sign = '-';
+   }
+
+   my $length = length $man;
+   my $maxlen = -398 - $exp;
+
+   if($length >= $maxlen) {
+     my $rounder = substr($man, $length - $maxlen); # The trailing (ignored) digits
+     $man = $length > $maxlen ? substr($man, 0, $length - $maxlen)
+                               : '0';
+     my $roundup = 0;
+     $roundup = 1 if substr($rounder, 0, 1) > 5;
+     $roundup = 1 if ((substr($rounder, 0, 1) == 5) &&
+                      ((substr($rounder, 1) =~ /[1-9]/) || (substr($man, -1, 1) %2 == 1)));
+
+     $man++ if $roundup;
+     $exp += $maxlen; # Removal of trailing digits moved the implied
+                       # decimal point $maxlen places to the left
+   }
+
+   return ($sign . $man, $exp);
+}
+
+#######################################################################
+#######################################################################
 
 sub assignME {
   # Check that 3 args are supplied
@@ -467,14 +584,18 @@ sub assignME {
   my $len_2 = length($arg2);
   $len_2-- if $arg2 =~ /^\-/;
 
-  if($len_2 > 16) {
-    die "$arg2 exceeds _Decimal64 precision.",
-        " It needs to be shortened to no more than 16 decimal digits";
+  if($len_2 > 16 || $arg3 < -398) {
+    die "$arg2 exceeds _Decimal64 precision. It needs to be shortened to no more than 16 decimal digits"
+      if $len_2 > 16;
+    ($arg2, $arg3) = _round_as_needed($arg2, $arg3);
   }
 
   return _assignME($arg1, $arg2, $arg3);
 
 }
+
+#######################################################################
+#######################################################################
 
 sub _sci2me {
     my @ret = split /e/i, $_[0];
@@ -488,12 +609,38 @@ sub _sci2me {
     return @ret;
 }
 
+#######################################################################
+#######################################################################
+
+sub d64_bytes {
+  my @ret = _d64_bytes($_[0]);
+  return join '', @ret;
+}
+
+#######################################################################
+#######################################################################
+
+sub hex2bin {
+    my $ret = unpack("B*", (pack "H*", $_[0]));
+    my $len = length $ret;
+    die "hex2bin() yielded $len bits" if $len != 64;
+    return $ret;
+}
+
+#######################################################################
+#######################################################################
+
 sub d64_fmt {
-  my $d64 = MEtoD64('99', 0);
-  return 'DPD' if d64_bytes($d64) =~ /000$/;
-  return 'BID' if d64_bytes($d64) =~ /063$/;
+  my $d64 = MEtoD64('1234567890123456', 0);
+  # BID: 31C462D53C8ABAC0
+  # DPD: 263934B9C1E28E56
+  return 'DPD' if d64_bytes($d64) =~ /E56$/i;
+  return 'BID' if d64_bytes($d64) =~ /AC0$/i;
   return 'Unknown';
 }
+
+#######################################################################
+#######################################################################
 
 sub decode_dpd {
   # Takes the Math::Decimal64 object as its arg.
@@ -517,6 +664,9 @@ sub decode_dpd {
   my $ret = $first[0] . $mantissa . 'e' . $first[2];
 
 }
+
+#######################################################################
+#######################################################################
 
 sub decode_dpd_1st{
   # Takes the entire binary string as its arg.
@@ -545,20 +695,26 @@ sub decode_dpd_1st{
   die "decode_dpd_1st function failed to parse its argument ($_[0])";
 }
 
+#######################################################################
+#######################################################################
+
 sub decode_dpd_2nd {
   # Takes the entire binary string as its arg.
   die "Argument to decode_dpd_2nd is wrong size (", length($_[0]), ")"
-    if length($_[0]) != 64; # 128 for Decimal128
+    if length($_[0]) != 64; # 64 for Decimal64
   my $leading_bits = 14;    # 18 for Decimal28
   my $trailing_bits = 50;   # 110 for Decimal28
   my $keep = substr($_[0], $leading_bits, $trailing_bits);
   my $ret = '';
   for my $i(0, 10, 20, 30, 40) {
     my $key = substr($keep, $i, 10);
-    $ret .= $Math::Decimal64::dpd_correlation{$key};
+    $ret .= $Math::Decimal64::dpd_encode{$key};
   }
   return $ret;
 }
+
+#######################################################################
+#######################################################################
 
 sub decode_bid {
   # Takes a Math::Decimal64 object as its arg.
@@ -566,7 +722,7 @@ sub decode_bid {
 
   my $keep = hex2bin(d64_bytes($_[0]));
   die "Base 2 representation is wrong size (", length($keep), ")"
-    if length($keep) != 64; # 128 for Decimal128
+    if length($keep) != 64; # 64 for Decimal64
   my $leading_bits =  13;
   my $trailing_bits = 51;
   my @mantissa;
@@ -578,7 +734,7 @@ sub decode_bid {
   if($pre eq '00' || $pre eq '01' || $pre eq '10') {
     $exp = oct('0b' . substr($keep, 1, 10)) - 398;
     @mantissa =  reverse(split(//, '0' . substr($keep, 11, 53)));
-    my $mantissa = bir_mant(\@mantissa);
+    my $mantissa = _bid_mant(\@mantissa);
     if($mantissa !~ /[1-9]/) { $mantissa = '0'}
     else {
       while($mantissa =~ /0$/) {
@@ -592,7 +748,7 @@ sub decode_bid {
   if($pre eq '1100' || $pre eq '1101' || $pre eq '1110') {
     $exp = oct('0b' . substr($keep, 3, 10)) - 398;
     @mantissa = reverse(split(//,'100' . substr($keep, 13, 51)));
-    my $mantissa = bir_mant(\@mantissa);
+    my $mantissa = _bid_mant(\@mantissa);
     if($mantissa !~ /[1-9]/) { $mantissa = '0'}
     else {
       while($mantissa =~ /0$/) {
@@ -605,22 +761,222 @@ sub decode_bid {
   die "decode_bid function failed to parse its argument ($_[0])";
 }
 
-sub d64_bytes {
-  my @ret = _d64_bytes($_[0]);
-  return join '', @ret;
+#######################################################################
+#######################################################################
+
+sub PVtoD64 {
+
+  my($arg1, $arg2) = PVtoME($_[0]);
+
+  if($arg1 =~ /inf|nan/i) {
+    $arg1 =~ /nan/i ? return NaND64()
+                    : $arg1 =~ /^\-/ ? return InfD64(-1)
+                                     : return InfD64(1);
+  }
+
+  return MEtoD64($arg1, $arg2);
 }
 
-sub hex2bin {
-    my $ret = unpack("B*", (pack "H*", $_[0]));
-    my $len = length $ret;
-    die "hex2bin() yielded $len bits" if $len != 64;
-    return $ret;
+#######################################################################
+#######################################################################
+
+sub assignPV {
+
+  my($arg1, $arg2) = PVtoME($_[1]);
+  if($arg1 =~ /inf|nan/i) {
+    $arg1 =~ /nan/i ? assignNaN($_[0])
+                    : $arg1 =~ /^\-/ ? assignInf($_[0], -1)
+                                     : assignInf($_[0], 1);
+  }
+  else {
+    assignME($_[0], $arg1, $arg2);
+  }
 }
+
+#######################################################################
+#######################################################################
 
 sub DEC64_MAX {return _DEC64_MAX()}
 sub DEC64_MIN {return _DEC64_MIN()}
 
-*decode_d64 = d64_fmt() eq 'DPD' ? \&decode_dpd : \&decode_bid;
+#######################################################################
+#######################################################################
+
+sub get_exp {
+  my $keep = hex2bin(d64_bytes($_[0]));
+  my $pre = substr($keep, 1, 2);
+  if(d64_fmt() eq 'DPD') {
+    if($pre eq '00' || $pre eq '01' || $pre eq '10') {
+      return oct('0b' . $pre . substr($keep, 6, 8)) - 398;
+    }
+    else {
+      return oct('0b' . substr($pre, 2, 2) . substr($keep, 6, 8)) - 398;
+    }
+  }
+  else {
+    if($pre eq '00' || $pre eq '01' || $pre eq '10') {
+      return oct('0b' . substr($keep, 1, 10)) - 398;
+    }
+    else {
+      return oct('0b' . substr($keep, 3, 10)) - 398;
+    }
+  }
+}
+
+#######################################################################
+#######################################################################
+
+sub get_sign {
+  return '-' if hex(substr(d64_bytes($_[0]), 0, 1)) >= 8;
+  return '+';
+}
+
+#######################################################################
+#######################################################################
+
+sub DPDtoD64 {
+  # Usable only where DPD format is in use.
+  # Converts the 64-bit string returned by _MEtoBINSTR into
+  # a Math::Decimal64 object set to the value encoded by the
+  # the 64-bit string. This is all done without having to calculate
+  # the actual value - and is typically ~25 times quicker than
+  # MEtoD64.
+  my($man, $exp) = (shift, shift);
+  my $arg = _MEtoBINSTR($man, $exp);
+  return _DPDtoD64(unpack("a*", pack( "B*", $arg)));
+}
+
+#######################################################################
+#######################################################################
+
+sub PVtoME {
+
+  my($arg1, $arg2) = split /e/i, $_[0];
+
+  if($arg1 =~ /^(\-|\+)?inf|^(\-|\+)?nan/i) {
+    return ($arg1, 0);
+  }
+
+  _sanitise_args($arg1, $arg2);
+  return ($arg1, $arg2);
+}
+
+sub MEtoPV {
+  my $arg1 = shift;
+  if($arg1 =~ /^(\-|\+)?inf|^(\-|\+)?nan/i) {
+    $arg1 =~ s/\+//;
+    return $arg1;
+  }
+
+  my $arg2 = shift;
+  return $arg1 . 'e' . $arg2;
+}
+
+#######################################################################
+#######################################################################
+
+sub _sanitise_args {
+    $_[1] = 0 unless defined $_[1];
+    $_[0] =~ s/\.0+$//;
+    my @split = split /\./, $_[0];
+    $split[1] = '' unless defined $split[1];
+    $_[1] -= length($split[1]);
+    $_[0] =~ s/\.//;
+    $_[0] =~ s/^0+//;
+}
+
+#######################################################################
+#######################################################################
+
+sub assignDPD {
+  _assignDPD($_[0], unpack("a*", pack("B*", _MEtoBINSTR($_[1], $_[2]))));
+}
+
+#######################################################################
+#######################################################################
+
+sub _MEtoBINSTR {
+  # Converts (mantissa, exponent) strings to DPD encoded 64-bit string - without
+  # the need to actually calculate the value.
+  my $man = shift;
+
+  if($man =~ /^(\-|\+)?inf|^(\-|\+)?nan/i) {
+     $man =~ /\-inf/i ? return '11111' . ('0' x 59)
+                      : $man =~ /^(\-|\+)?nan/i ? return '011111' . ('0' x 58)
+                                                : return '01111'  . ('0' x 59);
+  }
+
+  my $exp = shift;
+
+  # Determine the sign, and remove it.
+  my $sign = $man =~ /^\-/ ? '1' : '0';
+  $man =~ s/[\+\-]//;
+  die "_MEtoBINSTR has been passed (probably from DPDtoBINSTR) an illegal mantissa"
+    if $man =~ /[^0-9]/;
+
+  # Remove leading zeroes, and return zero (of appropriate sign)
+  # if we're left with the empty string.
+  $man =~ s/^0+//;
+  return $sign . '0100001101101' . ('0' x 50) unless $man;
+
+  # Fill the mantissa with 16 digits - by zero padding the end.
+  my $add_zeroes = 16 - length($man);
+  $man .= '0' x $add_zeroes;
+  $exp -= $add_zeroes;
+
+  if(length($man) > 16 || $exp < -398) {
+    die "$man exceeds _Decimal64 precision. It needs to be shortened to no more than 16 decimal digits"
+      if length($man) > 16;
+    ($man, $exp) = _round_as_needed($man, $exp);
+  }
+
+  # Return 0 if $exp is still less that -398.
+  return $sign . '0100001101101' . ('0' x 50) if $exp < -398;
+
+  # Return -inf/inf if value is infinite
+  if($exp > 369) {
+    return $sign . '1111'  . ('0' x 59) if (length($man) + $exp) > 385;
+  }
+
+  $man = '0' . $man while length($man) < 16;
+
+  # The last 50 bits encode the last 15 digits.
+  my $last_15_dig = substr($man, 1, 15);
+  my $last_50_bits;
+  for(my $i = 0; $i < 13; $i += 3) {
+    $last_50_bits .= $Math::Decimal64::dpd_decode{substr($last_15_dig, $i, 3)}
+  }
+
+  my $len = length($last_50_bits);
+  die "Wrong bitsize ($len != 50) in _MEtoBINSTR()" if $len != 50;
+
+  my $leading_digit = substr($man, 0, 1); # ie the msd (most siginificant digit).
+  my $exp_base_2 = sprintf "%010b", $exp + 398;
+
+  # The encoding of the exponent and msd depends upon the value of the msd.
+  # If it's 0..7, it's done one way; if it's 8 or 9 it's done th'other way.
+  if($leading_digit < 8) {
+    my $leading_digit_bits = sprintf "%03b", $leading_digit;
+    substr($exp_base_2, 2, 0, $leading_digit_bits);
+  }
+  else {
+    my $leading_digit_bit = $leading_digit == 8 ? '0' : '1';
+    $exp_base_2 = '11' . substr($exp_base_2, 0, 2) . $leading_digit_bit . substr($exp_base_2, 2, 8);
+  }
+
+  $len = length($exp_base_2);
+  die "Exponent (= $exp) component length is wrong ($len != 13) in _MEtoBINSTR()" if $len != 13;
+
+  return $sign . $exp_base_2 . $last_50_bits;
+}
+
+#######################################################################
+#######################################################################
+
+*decode_d64 = $Math::Decimal64::fmt eq 'DPD' ? \&decode_dpd : \&decode_bid;
+
+#######################################################################
+#######################################################################
 
 1;
 
@@ -628,7 +984,7 @@ __END__
 
 =head1 NAME
 
-Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
+Math::Decimal64 - perl interface to C's _Decimal64 operations.
 
 =head1 DEPENDENCIES
 
@@ -636,13 +992,6 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
    the _Decimal64 type is needed.
 
 =head1 DESCRIPTION
-
-   Note that this module is alpha software. It seems to work ok
-   for me on Windows 7 (Intel processor,compiling with gcc-4.6.3,
-   gcc-4.7.0) and Ubuntu-12.04LTS (Amd64 processor, gcc-4.6.3).
-
-   It also works for me on Debian wheezy (PowerpC processor,
-   gcc-4.6.3) apart from caveats mentioned in the docs below.
 
    Math::Decimal64 supports up to 16 decimal digits of significand
    (mantissa) and an exponent range of -383 to +384.
@@ -660,19 +1009,6 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
    holding a string of up to 16 decimal digits:
     $mantissa = '1234';
     $mantissa = '1234567890123456';
-
-   For many values, it normally shouldn't matter if $mantissa is
-   assigned as a number:
-    $mantissa = 1234;      # should work ok.
-
-   But on some perls there are values that *need* to be assigned
-   as a string. For example, on perls where nvtype is an 8 byte
-   'double':
-    $mantissa = '-9307199254740993'; # works fine
-    $mantissa = -9307199254740993;   # will assign wrong value
-
-   So ... where you see "$mantissa" in the following docs, think
-   *string* of up to 16 decimal digits".
 
 =head1 SYNOPSIS
 
@@ -695,14 +1031,6 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
 
     Arguments to the overloaded operations must be Math::Decimal64
     objects or integer (IV/UV) values.
-
-    If your perl has 8-byte (or larger) IV/UV, then you may get
-    unexpected results if you pass an IV/UV to the overloaded
-    operators (because the precision of the IV/UV exceeds the
-    precision of the _Decimal64 type) - it depends upon just how
-    big the absolute value of the IV/UV is.
-
-     $d64_2 = $d64_1 + 15; # ok
 
      $d64_2 = $d64_1 + 3.1; # Error. Best to either:
      $d64_2 = $d64_1 + MEtoD64('31',-1); # or (equivalentally):
@@ -730,6 +1058,19 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       Doing Math::Decimal64->new($mantissa, $exponent) will also
       create and assign using MEtoD64(), and is equally acceptable.
 
+     ######################################
+     $d64 = DPDtoD64($mantissa, $exponent);
+
+      eg: $d64 = DPDtoD64('12345', -3); # 12.345
+
+      This perhaps a quicker way of creating the Math::Decimal128
+      object with the intended value - but works only for DPD format
+      - ie only if d128_fmt() returns 'DPD'.
+      The mantissa string can be 'inf' or 'nan', optionally prefixed
+      with '-' or '+'. Otherwise, the mantissa string must
+      represent an integer value (with implied '.0' at the end) - ie
+      cannot contain a decimal point.
+
      ######################
      # Assign from a string
      $d64 = PVtoD64($string);
@@ -738,20 +1079,15 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
           $d64 = PVtoD64('-9307199254740993e-15');
           $d64 = Math::Decimal64->new('-9787199254740993');
           $d64 = Math::Decimal64->new('-9307199254740993e-23');
+          $d64 = Math::Decimal64->new('-inf');
+          $d64 = Math::Decimal64->new('nan');
 
       Does no checks on its arg. The arg can be in either integer
-      format or scientific notation or float format.
+      format or scientific notation, float format or (+-)inf/nan.
       Doing Math::Decimal64->new($string) will also create and
       assign using PVtoD64().
       This assigns using the C standard library function strtold(),
       and then casting to a _Decimal64.
-      It is significantly faster than MEtoD64 for exponents outside
-      the range (-10 .. 10) and I think it is reliable so long as:
-       1) the 'long double' type has precision of 55 bits or more;
-       2) the 'long double' type accommodates the _Decimal64 type's
-          exponent range;
-       3) Any (and all) digits after the mantissa's 16th digit
-          are '0'.
 
      #####################################
      # Assign from a UV (unsigned integer)
@@ -761,11 +1097,9 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
 
       Doing Math::Decimal64->new($uv) will also create and assign
       using UVtoD64().
-      On perls where the UV is 8 bytes or larger, the precision of
-      the UV exceeds the precision of the _Decimal64 - and this
-      function is not therefore recommended on such perls (unless
-      you're sure the UV value won't be subject to rounding).
-      Check the size of the UV by running perl -V:ivsize
+      Assigns the designated UV value to the Math::Decimal64 object
+      (but only to the extent that the _Decimal64 can accommodate
+      the value of the UV).
 
      ####################################
      # Assign from an IV (signed integer)
@@ -775,11 +1109,9 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
 
       Doing Math::Decimal64->new($iv) will also create and assign
       using IVtoD64().
-      On perls where the IV is 8 bytes or larger, the precision of
-      the UV exceeds the precision of the _Decimal64 - and this
-      function is not therefore recommended on such perls (unless
-      you're sure the IV value won't be subject to rounding).
-      Check the size of the IV by running perl -V:ivsize
+      Assigns the designated IV value to the Math::Decimal64 object
+      (but only to the extent that the _Decimal64 can accommodate
+      the value of the IV).
 
      ################################################
      # Assign from an existing Math::Decimal64 object
@@ -817,72 +1149,90 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       If your C compiler provides the strtod64 function, and
       you configured the Makefile.PL to enable access to that
       function then you can use this function.
-      usage is is as for PVtoD64().
+      Usage is is as for PVtoD64().
 
      ##############################
 
 =head1 ASSIGN A NEW VALUE TO AN EXISTING OBJECT
 
+     #####################################
      assignME($d64, $mantissa, $exponent);
       Assigns the value represented by ($mantissa, $exponent)
       to the Math::Decimal64 object, $d64.
       Performs same argument checking as MEtoD64.
-      Same caveats apply here as to MEtoD64 - see the MEtoD64
-      documentation.
 
       eg: assignME($d64, '123459', -6); # 0.123459
 
+     ######################################
+     assignDPD($d64, $mantissa, $exponent);
+      Assigns the value represented by ($mantissa, $exponent)
+      to the Math::Decimal128 object, $d128. This might work
+      more efficiently than assignME(), but works only when the
+      _Decimal128 type is DPD-formatted. (The d128_fmt function
+      will tell you whether the _Decimal128 is DPD-formatted or
+      BID-formatted.)
+
+      eg: assignDPD($d64, '123459', -6); # 0.123459
+
+     ########################
      assignPV($d64, $string);
       Assigns the value represented by $string to the
       Math::Decimal64 object, $d64.
-      Doesn't check to see what $string contains.
-      Same caveats apply here as to PVtoD64() - see the PVtoD64
-      documentation (above).
 
       eg: assignPV($d64, '123459e-6'); # 0.123459
 
+     ################
      assignNaN($d64);
       Assigns a NaN to the Math::Decimal64 object, $d64.
 
+     #######################
      assignInf($d64, $sign);
       Assigns an Inf to the Math::Decimal64 object, $d64.
       If $sign is negative, assigns -Inf; otherwise +Inf.
 
+     #######################
+
 =head1 INF, NAN and ZERO OBJECTS
 
+     #####################
      $d64 = InfD64($sign);
       If $sign < 0, creates a new Math::Decimal64 object set to
       negative infinity; else creates a Math::Decimal64 object set
       to positive infinity.
 
+     ################
      $d64 = NaND64();
       Creates a new Math::Decimal64 object set to NaN.
       Same as "$d64 = Math::Decimal64->new();"
 
+     ######################
      $d64 = ZeroD64($sign);
       If $sign < 0, creates a new Math::Decimal64 object set to
       negative zero; else creates a Math::Decimal64 object set to
       zero.
+
+    #######################
 
 =head1 RETRIEVAL FUNCTIONS
 
     The following functions provide ways of seeing the value of
     Math::Decimal64 objects.
 
+     ###########################
      $string = decode_d64($d64);
       This function calls either decode_dpd() or decode_bid(),
       depending upon the formatting used to encode the
       _Decimal64 value (as determined by the d64_fmt() sub).
       It returns the value as a string of the form (-)ME, where:
-       "M" is the mantissa, containing up to 16 base 10 digits;
-       "E" is the letter "e" followed by the exponent;
-       A minus sign is prefixed to any -ve number (incl -0), but no
-       sign at all is prefixed for +ve numbers (incl +0).
-      For example: +876301e17
+        "M" is the mantissa, containing up to 16 base 10 digits;
+        "E" is the letter "e" followed by the exponent;
+      A minus sign is prefixed to any -ve number (incl -0), but no
+      sign at all is prefixed for +ve numbers (incl +0).
       Returns the strings '+inf', '-inf', 'nan' for (respectively)
       +infinity, -infinity, NaN.
       The value will be decoded correctly.
 
+     ##################################
      $string = decode_dpd($d64_binary);
      $string = decode_bid($d64_binary);
 
@@ -896,6 +1246,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       call the appropriate decode_*() function for that encoding.
       The d64_fmt() sub will tell you which encoding is in use.
 
+     #######################################
      ($mantissa, $exponent) = D64toME($d64);
       Returns the value of the Math::Decimal object as a
       mantissa (string of up to 16 decimal digits) and exponent.
@@ -903,6 +1254,7 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       value in your preferred format. Afaik, the value will be
       decoded accurately.
 
+     ########################################
      ($mantissa, $exponent) = FR64toME($d64);
       Requires that Math::MPFR version 3.18 or later has been
       loaded. It also requires that Math:MPFR has been built with
@@ -911,15 +1263,18 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       will return true. (Otherwise it returns false.)
       Afaik, the value will be decoded accurately.
 
+     ####################
      $nv = D64toNV($d64);
       This function returns the value of the Math::Decimal64
       object to a perl scalar (NV). Under certain conditions
       it may not translate the value accurately.
 
+     ###########
      print $d64;
       Will print the value in the format (eg) -12345e-2, which
       equates to the decimal -123.45. Uses D64toME().
 
+     #########
      pFR $d64;
       Will print the value in the format (eg) -12345e-2, which
       equates to the decimal -123.45. Uses FR64toME() - which
@@ -928,23 +1283,47 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
        1) has been loaded;
        2) supports the Decimal64 mpfr conversion functions.
 
+     #########
+
 =head1 OTHER FUNCTIONS
 
+     ################################
+     ($man, $exp) = PVtoME($string);
+      $string is a string representing a floating-point value - eg
+      'inf', '+nan', '123.456', '-1234.56e-1', or '12345.6E-2'.
+      The function returns an array of (mantissa, exponent), where
+      the mantissa is a string of base 10 digits (prefixed with a
+      '-' for -ve values) with an implied decimal point at the
+      end of the string. For strings such as 'inf' and 'nan', the
+      mantissa will be set to $string, and the exponent to 0.
+      For the example strings given above, the returned arrays
+      would be ('inf', 0), ('+nan', 0), ('123456', -3), ('-123456',
+      -3) and ('123456', -3) respectively.
+
+     #######################################
+     $string = MEtoPV($mantissa, $exponent);
+      If $mantissa =~ /inf|nan/i returns $mantissa.
+      Else returns $mantissa . 'e' . $exponent.
+
+     #################
      $fmt = d64_fmt();
       Returns either 'DPD' or 'BID', depending upon whether the
       (internal) _Decimal64 values are encoded using the 'Densely
       Packed Decimal' format or the 'Binary Integer Decimal'
       format.
 
+     #######################
      $hex = d64_bytes($d64);
       Returns the hex representation of the _Decimal64 value
       as a string of 16 hex characters.
 
+     ############################
      $binary = hex2bin($d64_hex);
       Takes the string returned by d64_bytes (above) and
       rewrites it in binary form - ie as a string of 64 base 2
       digits.
 
+     #################
      $d64 = DEC64_MAX; # 9999999999999999e369
      $d64 = DEC64_MIN; # 1e-398
       DEC64_MAX is the largest positive finite representable
@@ -953,11 +1332,13 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       _Decimal64 value.
       Multiply these by -1 to get their negative counterparts.
 
+     ###################
      $d64 = Exp10($pow);
       Returns a Math::Decimal64 object with a value of
       10 ** $pow, for $pow in the range (-398 .. 384). Croaks
       with appropriate message if $pow is not within that range.
 
+     ########################
      $bool = have_strtod64();
       Returns true if, when building Math::Decimal64,
       the Makefile.PL was configured to make the STRtoD64()
@@ -967,23 +1348,27 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
       C library doesn't provide the strtod64 function.)
 
 
+     #########################
      $test = is_ZeroD64($d64);
       Returns:
        -1 if $d64 is negative zero;
-        1 if $d64 is a positive zero;
+        1 if $d64 is zero, but not negative zero;
         0 if $d64 is not zero.
 
+     ########################
      $test = is_InfD64($d64);
       Returns:
        -1 if $d64 is negative infinity;
         1 if $d64 is positive infinity;
         0 if $d64 is not infinity.
 
+     ########################
      $bool = is_NaND64($d64);
       Returns:
         1 if $d64 is a NaN;
         0 if $d64 is not a NaN.
 
+     ###################
      LDtoD64($d64, $ld); # $ld is a Math::LongDouble object
      D64toLD($ld, $d64); # $ld is a Math::LongDouble object
 
@@ -991,6 +1376,21 @@ Math::Decimal64 - (alpha) perl interface to C's _Decimal64 operations.
      objects - done by simply casting the long double value to a
      _Decimal64 value, or (resp.) vice-versa.
      Requires that Math::LongDouble has been loaded.
+
+     #######################
+     $sign = get_sign($d64);
+      Returns the sign ('+' or '-') of $d64.
+
+     #####################
+     $exp = get_exp($d64);
+      Returns the exponent of $d64. This is the exponent value
+      that's stored internally within the encapsulated _Decimal64
+      value; it may differ from the value that you assigned.
+      For example, if you've assigned the value MEtoD64('100', 0)
+      it will probably be held internally as '1e2', not '100e0',
+      in which case get_exp() would return 2, not 0.
+
+     ####################
 
 =head1 LICENSE
 

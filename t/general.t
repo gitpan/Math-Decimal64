@@ -29,7 +29,7 @@ else {print "not ok 6\n"}
 my $add = MEtoD64("1908824", -4);
 my $mul = MEtoD64("2335362414", -7);
 my $sub = MEtoD64("-1884196", -4);
-my $div = PVtoD64("0.0064929792091789655736062557012618");
+my $div = PVtoD64("0.006492979209178966");
 
 if($d64 + $d64_2 == $add) {print "ok 7\n"}
 else {
@@ -51,7 +51,7 @@ else {
 
 if($d64 / $d64_2 == $div) {print "ok 10\n"}
 else {
-  warn "\nLHS: ", $d64 + $d64_2, "\nRHS: $div\n";
+  warn "\nLHS: ", $d64 / $d64_2, "\nRHS: $div\n";
   print "not ok 10\n";
 }
 
@@ -103,7 +103,7 @@ else {
 
 if($d64 / $d64_2 <= $div) {print "ok 18\n"}
 else {
-  warn "\nLHS: ", $d64 + $d64_2, "\nRHS: $div\n";
+  warn "\nLHS: ", $d64 / $d64_2, "\nRHS: $div\n";
   print "not ok 18\n";
 }
 

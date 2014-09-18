@@ -22,7 +22,16 @@ t/overload_spaceship.t
 t/pod.t
 t/reassign.t
 t/strtod64.t
+t/subnormal.t
 t/UV_arith.t
 t/UV_cmp.t
+t/PVtoD64.t
+t/MEtoPV.t
+t/Inf_Nan.t
+t/DPDtoD64.t
+t/decode_cross_checks.t
+t/assignDPD.t
+t/assignPV.t
+t/Exp10.t
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

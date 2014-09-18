@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use Math::Decimal64 qw(:all);
 
-print "1..11\n";
+print "1..12\n";
 
 my $check2 = Math::Decimal64->new(10, 0);
 my $add    = Math::Decimal64->new(1, -2);
@@ -150,13 +150,21 @@ else {
   print "not ok 10\n";
 }
 
-# Fails on my powerpc box - a bug in the compiler/libc print formatting (sprintf).
+# Used to fail on my powerpc box - a bug in the compiler/libc print formatting (sprintf).
 $d64_1 = Math::Decimal64->new('897', -292);
 ($man, $exp) = D64toME($d64_1);
 if($man eq '897' && $exp == -292) {print "ok 11\n"}
 else {
   warn "\$man: $man \$exp: $exp\n";
   print "not ok 11\n";
+}
+
+$d64_1 = Math::Decimal64->new('-897', -292);
+($man, $exp) = D64toME($d64_1);
+if($man eq '-897' && $exp == -292) {print "ok 12\n"}
+else {
+  warn "\$man: $man \$exp: $exp\n";
+  print "not ok 12\n";
 }
 
 

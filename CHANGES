@@ -1,3 +1,6 @@
+0.08
+ - Add get_exp() and get_sign()
+
 0.07
  - Add unpack() and associated subs.
 
